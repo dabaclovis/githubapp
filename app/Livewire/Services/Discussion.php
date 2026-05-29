@@ -2,94 +2,89 @@
 
 namespace App\Livewire\Services;
 
-use App\Models\Comment;
 use App\Models\Post;
+use App\Models\User;
+use Illuminate\Support\Str;
+use Livewire\Attributes\Layout;
 use Livewire\Component;
-use Str;
+use Livewire\WithPagination;
 
+#[Layout('components.layouts.app', [
+    'title' => 'Discussion Board',
+    'description' => 'Browse and create discussion posts.',
+    'keywords' => 'discussion, posts, community',
+])]
 class Discussion extends Component
 {
-    public $posts = [];
-    public $selectedPost = null;
-    public $newComment = '';
-    public $newReply = '';
-    public $selectedComment = null;
-    public $title = '';
-    public $content = '';
+    use WithPagination;
 
-    protected $rules = [
-        'title' => ['required', 'string', 'max:255'],
-        'content' => ['required', 'string'],
+    public bool $showPostModal = false;
+    public string $title = '';
+    public string $content = '';
+
+    protected array $rules = [
+        'title' => 'required|string|max:255',
+        'content' => 'required|string|min:3|max:5000',
     ];
 
-    public function mount()
+    public function createPost(): void
     {
-        $this->refreshPosts();
-    }
+        $validated = $this->validate();
+        $owner = $this->resolvePostOwner();
 
-    public function refreshPosts()
-    {
-        $this->posts = Post::with(['comments.replies'])->latest()->get();
-    }
-
-    public function selectPost($postId)
-    {
-        $this->selectedPost = Post::with(['comments.replies'])->find($postId);
-        $this->selectedComment = null;
-        $this->newComment = '';
-        $this->newReply = '';
-    }
-
-    public function createPost()
-    {
-        $this->validate();
-        $post = Post::create([
-            'title' => $this->title,
-            'content' => $this->content,
-            'slug' => Str::slug($this->title) . '-' . uniqid(),
-            'postsable_id' => 1, // Adjust as needed
-            'postsable_type' => 'App\\Models\\User', // Adjust as needed
+        Post::create([
+            'title' => Str::ucfirst(trim($validated['title'])),
+            'content' => Str::ucfirst(trim($validated['content'])),
+            'slug' => Str::slug($validated['title']) . '-' . Str::lower(Str::random(8)),
+            'postsable_id' => $owner['id'],
+            'postsable_type' => $owner['type'],
         ]);
-        $this->title = '';
-        $this->content = '';
-        $this->refreshPosts();
-        $this->selectPost($post->id);
+
+        $this->reset(['title', 'content']);
+        $this->showPostModal = false;
+        $this->resetPage();
+
         session()->flash('message', 'Post created successfully!');
     }
 
-    public function addComment()
+    public function openPostModal(): void
     {
-        if ($this->selectedPost && $this->newComment) {
-            $this->selectedPost->comments()->create([
-                'body' => $this->newComment,
-            ]);
-            $this->newComment = '';
-            $this->selectPost($this->selectedPost->id);
-            session()->flash('message', 'Comment added successfully!');
-        }
+        $this->showPostModal = true;
     }
 
-    public function selectComment($commentId)
+    public function closePostModal(): void
     {
-        $this->selectedComment = $commentId;
-        $this->newReply = '';
+        $this->showPostModal = false;
+        $this->reset(['title', 'content']);
     }
 
-    public function addReply()
+    private function resolvePostOwner(): array
     {
-        if ($this->selectedComment && $this->newReply) {
-            $comment = Comment::find($this->selectedComment);
-            $comment->replies()->create([
-                'body' => $this->newReply,
-            ]);
-            $this->newReply = '';
-            $this->selectPost($this->selectedPost->id);
-            session()->flash('message', 'Reply added successfully!');
+        $authenticatedUser = auth()->user();
+
+        if ($authenticatedUser) {
+            return [
+                'id' => $authenticatedUser->getKey(),
+                'type' => $authenticatedUser::class,
+            ];
         }
+
+        $fallbackUserId = User::query()->value('id') ?? 1;
+
+        return [
+            'id' => $fallbackUserId,
+            'type' => User::class,
+        ];
     }
 
     public function render()
     {
-        return view('livewire.services.discussion');
+        $posts = Post::query()
+            ->select(['id', 'title', 'content', 'slug', 'created_at'])
+            ->withCount('comments')
+            ->latest()
+            ->paginate(9);
+
+        return view('livewire.services.discussion', compact('posts'));
     }
 }

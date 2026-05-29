@@ -1,93 +1,111 @@
-<div class="container py-4">
-    <h2 class="mb-4">Discussion Board</h2>
-
-    @if (session()->has('message'))
-    <div class="alert alert-success">{{ session('message') }}</div>
-    @endif
-
-    @if ($errors->any())
-    <div class="alert alert-danger">
-        <ul class="mb-0">
-            @foreach ($errors->all() as $error)
-            <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-    </div>
-    @endif
-
-    <div class="row">
-        <div class="col-md-4">
-            <h4>Posts</h4>
-            <form wire:submit.prevent="createPost" class="mb-3" aria-label="Create Post">
-                <div class="mb-2">
-                    <input type="text" wire:model.defer="title" class="form-control" placeholder="Post title" required
-                        aria-label="Post title">
-                </div>
-                <div class="mb-2">
-                    <textarea wire:model.defer="content" class="form-control" placeholder="Post body" rows="2" required
-                        aria-label="Post body"></textarea>
-                </div>
-                <button class="btn btn-primary w-100" type="submit">Create Post</button>
-            </form>
-            <ul class="list-group mb-3">
-                @forelse($posts as $post)
-                <li class="list-group-item @if($selectedPost && $selectedPost->id === $post->id) active @endif"
-                    wire:click="selectPost({{ $post->id }})" style="cursor:pointer;">
-                    {{ $post->title ?? 'Untitled Post' }}
-                </li>
-                @empty
-                <li class="list-group-item text-muted">No posts yet.</li>
-                @endforelse
-            </ul>
-        </div>
-        <div class="col-md-8">
-            @if($selectedPost)
-            <div class="card mb-3">
-                <div class="card-body">
-                    <h5 class="card-title">{{ $selectedPost->title ?? 'Untitled Post' }}</h5>
-                    <p class="card-text">{{ $selectedPost->content ?? '' }}</p>
-                </div>
+<div class="container-xl py-3" style="max-width: 1220px;">
+    <header @class(['rounded-3', 'p-3', 'mb-3', 'text-white']) style="background: linear-gradient(120deg, #093028, #237a57);">
+        <div @class([
+            'd-flex',
+            'align-items-center',
+            'justify-content-between',
+            'flex-wrap',
+        ])>
+            <div>
+                <h3 @class(['mb-0'])>Discussion Board</h3>
+                <p @class(['mb-0']) style="opacity: 0.75;">Share updates, gather feedback, and keep the
+                    conversation alive.</p>
             </div>
-            <h5>Comments</h5>
-            <ul class="list-group mb-3">
-                @forelse($selectedPost->comments as $comment)
-                <li class="list-group-item">
-                    <div>
-                        {{ $comment->body }}
-                        <button class="btn btn-sm btn-link"
-                            wire:click="selectComment({{ $comment->id }})">Reply</button>
+            <button @class(['btn', 'btn-light', 'btn-sm', 'font-weight-bold']) type="button" wire:click="openPostModal">
+                + New Post
+            </button>
+        </div>
+    </header>
+
+    @include('partials.messages.form')
+
+    @if ($showPostModal)
+        <div @class(['modal', 'd-block']) tabindex="-1" style="background: rgba(0,0,0,0.4);"
+            wire:click.self="closePostModal" @keydown.escape.window="$wire.closePostModal()">
+            <div @class(['modal-dialog', 'modal-lg', 'modal-dialog-centered'])>
+                <div @class(['modal-content', 'rounded-3', 'shadow'])>
+
+                    <div @class(['modal-header', 'bg-light', 'border-bottom'])>
+                        <h5 @class(['modal-title'])>Create New Post</h5>
+                        <button type="button" @class(['btn-close', 'btn-danger']) wire:click="closePostModal"
+                            aria-label="Close">&times;
+                        </button>
                     </div>
-                    @if($selectedComment === $comment->id)
-                    <form wire:submit.prevent="addReply" class="mt-2" aria-label="Add Reply">
-                        <div class="input-group">
-                            <input type="text" wire:model.defer="newReply" class="form-control"
-                                placeholder="Write a reply..." aria-label="Reply">
-                            <button class="btn btn-primary" type="submit">Reply</button>
+
+                    <form wire:submit.prevent="createPost" aria-label="Create Post">
+                        <div @class(['modal-body'])>
+                            <div @class(['mb-3'])>
+                                <label @class(['form-label', 'small', 'text-muted']) for="postTitle">Title</label>
+                                <input id="postTitle" type="text" wire:model.defer="title"
+                                    @class(['form-control', 'is-invalid' => $errors->has('title')]) placeholder="Write a concise title" required>
+                                @error('title')
+                                    <div @class(['invalid-feedback'])>{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div @class(['mb-3'])>
+                                <label @class(['form-label', 'small', 'text-muted']) for="postBody">Message</label>
+                                <textarea id="postBody" wire:model.defer="content" @class(['form-control', 'is-invalid' => $errors->has('content')])
+                                    placeholder="What do you want to discuss?" rows="5" required></textarea>
+                                @error('content')
+                                    <div @class(['invalid-feedback'])>{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <div @class(['modal-footer', 'border-top-0', 'pt-0'])>
+                            <button @class(['btn', 'btn-secondary']) type="button"
+                                wire:click="closePostModal">Cancel</button>
+                            <button @class(['btn', 'btn-success']) type="submit" wire:loading.attr="disabled"
+                                wire:target="createPost">
+                                <span wire:loading wire:target="createPost" @class(['spinner-border', 'spinner-border-sm', 'mr-1'])></span>
+                                Publish Post
+                            </button>
                         </div>
                     </form>
-                    @endif
-                    @if($comment->replies && $comment->replies->count())
-                    <ul class="list-group mt-2">
-                        @foreach($comment->replies as $reply)
-                        <li class="list-group-item small">{{ $reply->body }}</li>
-                        @endforeach
-                    </ul>
-                    @endif
-                </li>
-                @empty
-                <li class="list-group-item text-muted">No comments yet.</li>
-                @endforelse
-            </ul>
-            <form wire:submit.prevent="addComment" aria-label="Add Comment">
-                <div class="input-group mb-3">
-                    <input type="text" wire:model.defer="newComment" class="form-control" placeholder="Add a comment..."
-                        aria-label="Comment">
-                    <button class="btn btn-success" type="submit">Comment</button>
+
                 </div>
-            </form>
-            @else
-            <div class="alert alert-info">Select a post to view comments and participate in the discussion.</div>
-            @endif
+            </div>
         </div>
+    @endif
+
+    <div @class(['row', 'g-2'])>
+        @forelse($posts as $post)
+            <div @class(['col-12', 'mb-1']) wire:key="post-{{ $post->id }}">
+                <div @class(['card', 'border', 'shadow-sm'])>
+                    <div @class(['card-body', 'py-2', 'px-3', 'd-flex', 'flex-column'])>
+                        <h6 @class(['card-title', 'mb-1'])>{{ Str::ucfirst($post->title) }}</h6>
+                        <p @class(['card-text', 'text-muted', 'small', 'mb-2']) style="font-size: 0.9rem;">
+                            {{ Str::ucfirst(Str::limit($post->content, 300)) }}
+                        </p>
+                        <div @class(['d-flex', 'align-items-center', 'justify-content-between'])>
+                            <span @class(['badge', 'badge-secondary'])>
+                                {{ $post->comments_count }} {{ Str::plural('comment', $post->comments_count) }}
+                            </span>
+                            <div @class(['d-flex', 'align-items-center'])>
+                                <small @class(['text-muted', 'mr-3'])>{{ $post->created_at->diffForHumans() }}</small>
+                                <a href="{{ route('discussion.show', $post->slug) }}" @class(['btn', 'btn-sm', 'btn-outline-success', 'py-0'])>
+                                    Read more &rarr;
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @empty
+            <div @class(['col-12'])>
+                <div @class(['card', 'border', 'rounded', 'text-center', 'py-4'])>
+                    <div @class(['card-body', 'py-2'])>
+                        <h6 @class(['text-muted'])>No posts yet.</h6>
+                        <p @class(['text-muted', 'mb-0', 'small'])>Be the first to start a discussion!</p>
+                    </div>
+                </div>
+            </div>
+        @endforelse
     </div>
+
+    @if ($posts->hasPages())
+        <div @class(['mt-4', 'd-flex', 'justify-content-center'])>
+            {{ $posts->links('pagination::bootstrap-4') }}
+        </div>
+    @endif
 </div>

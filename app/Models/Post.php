@@ -21,4 +21,14 @@ class Post extends Model
     {
         return $this->morphOne(Image::class, 'imagesable');
     }
+
+    public function postsable()
+    {
+        return $this->morphTo();
+    }
+    // get route key name
+    public function getRouteKeyName()
+    {
+        return 'slug';
+    }
 }
