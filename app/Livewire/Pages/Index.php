@@ -7,7 +7,7 @@ use Livewire\Component;
 use Livewire\Attribute\Layout;
 
 
-#[Layout(
+   #[Layout(
     'components.layouts.app',
     [
         'title' => 'Home - services and offerings',
