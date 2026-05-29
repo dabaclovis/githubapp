@@ -6,10 +6,11 @@ namespace App\Livewire\Pages;
 use Livewire\Component;
 use Livewire\Attribute\Layout;
 
-#[Layout(
+
+   #[Layout(
     'components.layouts.app',
     [
-        'title' => 'Home',
+        'title' => 'Home - services and offerings',
         'description' => 'Welcome to our website! Explore our services and offerings.',
         'keywords' => 'home, welcome, services, offerings',
     ]
