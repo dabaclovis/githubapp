@@ -47,4 +47,28 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+    public function posts()
+    {
+        return $this->hasMany(Post::class);
+    }
+
+    public function phones()
+    {
+        return $this->morphOne(Phone::class, 'phonesable');
+    }
+    public function imagesable()
+    {
+        return $this->morphOne(Image::class, 'imagesable');
+    }
+
+    public function contacts()
+    {
+        return $this->morphOne(Contact::class, 'contactsable');
+    }
+
+    public function events()
+    {
+        return $this->morphMany(Event::class, 'eventsable');
+    }
 }
