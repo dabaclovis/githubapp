@@ -26,13 +26,14 @@
                 <div @class(['modal-content', 'rounded-3', 'shadow'])>
 
                     <div @class(['modal-header', 'bg-light', 'border-bottom'])>
-                        <h5 @class(['modal-title'])>Create New Post</h5>
+                        <h5 @class(['modal-title'])>{{ $isEditingPost ? 'Edit Post' : 'Create New Post' }}</h5>
                         <button type="button" @class(['btn-close', 'btn-danger']) wire:click="closePostModal"
                             aria-label="Close">&times;
                         </button>
                     </div>
 
-                    <form wire:submit.prevent="createPost" aria-label="Create Post">
+                    <form wire:submit.prevent="{{ $isEditingPost ? 'updatePost' : 'createPost' }}"
+                        aria-label="Create Post">
                         <div @class(['modal-body'])>
                             <div @class(['mb-3'])>
                                 <label @class(['form-label', 'small', 'text-muted']) for="postTitle">Title</label>
@@ -56,9 +57,10 @@
                             <button @class(['btn', 'btn-secondary']) type="button"
                                 wire:click="closePostModal">Cancel</button>
                             <button @class(['btn', 'btn-success']) type="submit" wire:loading.attr="disabled"
-                                wire:target="createPost">
-                                <span wire:loading wire:target="createPost" @class(['spinner-border', 'spinner-border-sm', 'mr-1'])></span>
-                                Publish Post
+                                wire:target="createPost,updatePost">
+                                <span wire:loading wire:target="createPost,updatePost"
+                                    @class(['spinner-border', 'spinner-border-sm', 'mr-1'])></span>
+                                {{ $isEditingPost ? 'Update Post' : 'Publish Post' }}
                             </button>
                         </div>
                     </form>
@@ -83,7 +85,16 @@
                             </span>
                             <div @class(['d-flex', 'align-items-center'])>
                                 <small @class(['text-muted', 'mr-3'])>{{ $post->created_at->diffForHumans() }}</small>
-                                <a href="{{ route('discussion.show', $post->slug) }}" @class(['btn', 'btn-sm', 'btn-outline-success', 'py-0'])>
+                                <button type="button" @class(['btn', 'btn-sm', 'btn-outline-primary', 'mr-2', 'py-0'])
+                                    wire:click="openEditPostModal({{ $post->id }})">
+                                    Edit
+                                </button>
+                                <button type="button" @class(['btn', 'btn-sm', 'btn-outline-danger', 'mr-2', 'py-0'])
+                                    wire:click="deletePost({{ $post->id }})">
+                                    Delete
+                                </button>
+                                <a href="{{ route('services.discussion.show', $post->slug) }}"
+                                    @class(['btn', 'btn-sm', 'btn-outline-success', 'py-0'])>
                                     Read more &rarr;
                                 </a>
                             </div>

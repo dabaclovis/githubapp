@@ -3,7 +3,7 @@
     @include('partials.messages.form')
 
     {{-- Back link --}}
-    <a href="{{ url('/discussion') }}" @class(['btn', 'btn-sm', 'btn-outline-secondary', 'mb-3'])>
+    <a href="{{ url()->previous() }}" @class(['btn', 'btn-sm', 'btn-outline-secondary', 'mb-3'])>
         &larr; Back to Discussions
     </a>
 
@@ -34,7 +34,6 @@
             </span>
         </div>
         <div @class(['card-body'])>
-
             {{-- Add comment --}}
             <form wire:submit.prevent="addComment" aria-label="Add Comment" @class(['mb-4'])>
                 <label @class(['form-label', 'small', 'text-muted']) for="newCommentField">Add a comment</label>
@@ -56,21 +55,86 @@
                 <article wire:key="comment-{{ $comment->id }}" @class(['card', 'border', 'rounded-3', 'mb-3'])>
                     <div @class(['card-body', 'py-2', 'px-3'])>
 
-                        <div @class(['d-flex', 'align-items-start', 'justify-content-between'])>
-                            <p @class(['mb-1', 'mr-2'])>{{ Str::ucfirst($comment->content) }}</p>
-                            <button @class(['btn', 'btn-sm', 'btn-outline-success', 'flex-shrink-0']) wire:click="selectComment({{ $comment->id }})"
-                                type="button">
-                                {{ $selectedComment === $comment->id ? 'Cancel' : 'Reply' }}
-                            </button>
-                        </div>
+                        @if ($editingCommentId === $comment->id)
+                            <form wire:submit.prevent="updateComment" @class(['mb-2'])
+                                aria-label="Edit Comment">
+                                <div @class(['input-group'])>
+                                    <input type="text" wire:model.defer="editCommentContent"
+                                        @class(['form-control']) aria-label="Edit Comment">
+                                    <button @class(['btn', 'btn-primary']) type="submit">Save</button>
+                                    <button @class(['btn', 'btn-outline-secondary']) type="button"
+                                        wire:click="cancelEditComment">Cancel</button>
+                                </div>
+                                @error('editCommentContent')
+                                    <div @class(['text-danger', 'small', 'mt-1'])>{{ $message }}</div>
+                                @enderror
+                            </form>
+                        @else
+                            <div>
+                                <p @class(['mb-2'])>{{ Str::ucfirst($comment->content) }}</p>
+                                <div @class(['d-flex', 'align-items-center', 'gap-1'])>
+                                    <button @class(['btn', 'btn-sm', 'btn-outline-success', 'py-0', 'px-2'])
+                                        wire:click="selectComment({{ $comment->id }})" type="button">
+                                        <small>{{ $selectedComment === $comment->id ? 'Cancel' : 'Reply' }}</small>
+                                    </button>
+                                    <button @class(['btn', 'btn-sm', 'btn-outline-primary', 'py-0', 'px-2'])
+                                        wire:click="startEditComment({{ $comment->id }})" type="button">
+                                        <small>Edit</small>
+                                    </button>
+                                    <button @class(['btn', 'btn-sm', 'btn-outline-danger', 'py-0', 'px-2'])
+                                        wire:click="deleteComment({{ $comment->id }})" type="button">
+                                        <small>Delete</small>
+                                    </button>
+                                </div>
+                            </div>
+                        @endif
 
                         {{-- Replies --}}
                         @if ($comment->replies && $comment->replies->count())
-                            <div @class(['mt-2', 'ml-3'])>
+                            <div @class(['mt-2', 'ml-3', 'ps-3']) style="border-left: 3px solid #0d6efd;">
                                 @foreach ($comment->replies as $reply)
                                     <div wire:key="reply-{{ $reply->id }}" @class(['rounded-2', 'px-3', 'py-2', 'mt-1', 'small'])
-                                        style="background: #f2f6f8; border: 1px solid #dce3e8;">
-                                        {{ Str::ucfirst($reply->content) }}
+                                        style="background: #f2f6f8;">
+                                        @if ($editingReplyId === $reply->id)
+                                            <form wire:submit.prevent="updateReply" aria-label="Edit Reply">
+                                                <div @class(['input-group'])>
+                                                    <input type="text" wire:model.defer="editReplyContent"
+                                                        @class(['form-control', 'form-control-sm']) aria-label="Edit Reply">
+                                                    <button @class(['btn', 'btn-sm', 'btn-primary']) type="submit">Save</button>
+                                                    <button @class(['btn', 'btn-sm', 'btn-outline-secondary']) type="button"
+                                                        wire:click="cancelEditReply">Cancel</button>
+                                                </div>
+                                            </form>
+                                            @error('editReplyContent')
+                                                <div @class(['text-danger', 'small', 'mt-1'])>{{ $message }}</div>
+                                            @enderror
+                                        @else
+                                            <div @class(['d-flex', 'justify-content-between', 'align-items-center'])>
+                                                <span>{{ Str::ucfirst($reply->content) }}</span>
+                                                <div>
+                                                    <button @class([
+                                                        'btn',
+                                                        'btn-sm',
+                                                        'btn-link',
+                                                        'text-primary',
+                                                        'py-0',
+                                                        'px-1',
+                                                        'mr-1',
+                                                    ]) type="button"
+                                                        wire:click="startEditReply({{ $reply->id }})">Edit</button>
+                                                    <button @class([
+                                                        'btn',
+                                                        'btn-sm',
+                                                        'btn-link',
+                                                        'text-danger',
+                                                        'py-0',
+                                                        'px-1',
+                                                        'mr-1',
+                                                    ]) type="button"
+                                                        wire:click="deleteReply({{ $reply->id }})">Delete</button>
+                                                </div>
+                                            </div>
+                                        @endif
                                     </div>
                                 @endforeach
                             </div>

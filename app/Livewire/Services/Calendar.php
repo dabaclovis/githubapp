@@ -8,7 +8,11 @@ use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
-#[Layout('components.layouts.app', ['title' => 'Calendar Scheduler'])]
+#[Layout('components.layouts.users', [
+    'title' => 'Calendar',
+    'description' => 'View and manage your calendar events.',
+    'keywords' => 'calendar, events, schedule',
+])]
 class Calendar extends Component
 {
     public int $year;
@@ -196,14 +200,14 @@ class Calendar extends Component
         $byDate = Event::whereYear('event_date', $this->year)
             ->whereMonth('event_date', $this->month)
             ->get()
-            ->groupBy(fn ($e) => Carbon::parse($e->event_date)->day);
+            ->groupBy(fn($e) => Carbon::parse($e->event_date)->day);
 
         // Events with no event_date, grouped by start_time day
         $byStart = Event::whereNull('event_date')
             ->whereYear('start_time', $this->year)
             ->whereMonth('start_time', $this->month)
             ->get()
-            ->groupBy(fn ($e) => Carbon::parse($e->start_time)->day);
+            ->groupBy(fn($e) => Carbon::parse($e->start_time)->day);
 
         // Merge both collections
         foreach ($byStart as $day => $dayEvents) {
@@ -222,4 +226,3 @@ class Calendar extends Component
         ]);
     }
 }
-
