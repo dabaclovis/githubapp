@@ -3,7 +3,16 @@
 namespace App\Livewire\Pages;
 
 use Livewire\Component;
+use Livewire\Attributes\Layout;
 
+#[Layout(
+    'components.layouts.app',
+    [
+        'title' => 'Home',
+        'description' => 'Welcome to our website! Explore our services and offerings.',
+        'keywords' => 'home, welcome, services, offerings',
+    ]
+)]
 class Index extends Component
 {
     public function render()
