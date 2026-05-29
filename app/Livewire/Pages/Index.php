@@ -23,7 +23,7 @@ class Index extends Component
             'icon' => 'fas fa-calendar-alt',
             'color' => 'primary',
             'btn' => 'primary',
-            'link' => '#',
+            'link' => 'calendar',
         ],
         [
             'title' => 'Posts Management',
@@ -31,7 +31,7 @@ class Index extends Component
             'icon' => 'fas fa-edit',
             'color' => 'success',
             'btn' => 'success',
-            'link' => '#',
+            'link' => 'discussion',
         ],
         [
             'title' => 'Comments & Replies',
